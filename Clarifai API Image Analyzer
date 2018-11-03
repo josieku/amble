@@ -1,0 +1,25 @@
+from clarifai.rest import ClarifaiApp
+from clarifai.rest import Image as ClImage
+
+def getImageDescriptors(imageURL):
+
+    app = ClarifaiApp(api_key='f0ef1ce700b545eda69d17a6104764d7')
+    model = app.public_models.general_model
+    model.model_version = 'aa7f35c01e0642fda5cf400f543e7c40'
+    apiResponse = model.predict(Image(url=imageURL)) 
+    
+    keywords = []
+    for i in apiResponse["data"]["concepts"]:
+        probability = apiResponse["data"]["concepts"][i].get("value")
+        if (probablility > 0.20):
+            keywords.append(apiResponse["data"]["concepts"][i].get("name"))
+            
+    return keywords
+    
+###########################################################################
+# Testing
+imageURL = input("Welcome to the Clarifai Image Analyzer! Please input a" + 
+                     " link to an image you want analysed.\n")
+print("Here are the keywords taken from this image:\n")
+for i in getImageDescriptors(imageURL):
+    print(getImageDescriptors(imageURL)[i])
