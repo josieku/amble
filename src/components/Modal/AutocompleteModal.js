@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, Modal } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
-export default class App extends React.Component {
+export default class AutocompleteModal extends React.Component {
     render() {
         return (
             <Modal
@@ -16,54 +16,45 @@ export default class App extends React.Component {
                     <View style={styles.modalHeader}>
                         <Text>{this.props.text}</Text>
                         <TouchableOpacity onPress={() => this.props.setModalVisible(false)}>
-                            <Text style={styles.textCloseModal}>Cancelar</Text>
+                            <Text style={styles.textCloseModal}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                     <GooglePlacesAutocomplete
-                        placeholder='Pesquisar'
-                        minLength={5} // minimum length of text to search
+                        placeholder='Search'
+                        minLength={2} // minimum length of text to search
                         autoFocus={false}
-                        listViewDisplayed='auto'
+                        returnKeyType={'search'} // Can be left out for default return key https://facebook.github.io/react-native/docs/textinput.html#returnkeytype
+                        listViewDisplayed='auto'    // true/false/undefined
                         fetchDetails={true}
+                        renderDescription={row => row.description} // custom description render
                         onPress={(data, details = null) => { // 'details' is provided when fetchDetails = true
-                            this.props.save(details.geometry.location, details.formatted_address);
+                            this.props.save(details.geometry.location, details.formatted_address)
+                            // console.log(details.geometry.location);
                         }}
-                        getDefaultValue={() => {
-                            return ''; // text input default value
-                        }}
+                        
+                        getDefaultValue={() => ''}
+                        
                         query={{
                             // available options: https://developers.google.com/places/web-service/autocomplete
                             key: this.props.googleKey,
-                            language: 'pt_BR', // language of the results
-                            location: `${this.props.currentLocation.latitude}, ${this.props.currentLocation.longitude}`,
-                            radius: '90000', //90km
-                            components: 'country:br',
-                            types: ['geocode', 'establishment'], // default: 'geocode',
-                            strictbounds: true
+                            language: 'en', // language of the results
+                            types: ['address', 'establishment','geocode'] // default: 'geocode'
                         }}
+                        
                         styles={{
-                            container: {
-                                flex: 1
-                            },
-                            listView: {
-                                flex: 1
+                            textInputContainer: {
+                            width: '100%'
                             },
                             description: {
-                                fontWeight: 'bold',
+                            fontWeight: 'bold'
                             },
                             predefinedPlacesDescription: {
-                                color: '#1faadb',
-                                borderBottomColor: '#063746',
-                                borderBottomWidth: 1,
-                            },
-                            textInputContainer: {
-                                backgroundColor: 'white',
-                                borderBottomColor: '#063746',
-                                borderBottomWidth: 1,
+                            color: '#1faadb'
                             }
                         }}
-                        currentLocation={this.props.showCurrentLocationButton} // Will add a 'Current location' button at the top of the predefined places list
-                        currentLocationLabel="Localização Atual"
+                        
+                        currentLocation={true} // Will add a 'Current location' button at the top of the predefined places list
+                        currentLocationLabel="Current location"
                         nearbyPlacesAPI='GooglePlacesSearch' // Which API to use: GoogleReverseGeocoding or GooglePlacesSearch
                         GoogleReverseGeocodingQuery={{
                             // available options for GoogleReverseGeocoding API : https://developers.google.com/maps/documentation/geocoding/intro
@@ -71,9 +62,13 @@ export default class App extends React.Component {
                         GooglePlacesSearchQuery={{
                             // available options for GooglePlacesSearch API : https://developers.google.com/places/web-service/search
                             rankby: 'distance',
-                            types: 'food',
+                            types: 'food'
                         }}
-                    />
+                    
+                        filterReverseGeocodingByTypes={['locality', 'administrative_area_level_3']} // filter the reverse geocoding results by types - ['locality', 'administrative_area_level_3'] if you want to display only cities
+                    
+                        debounce={200} // debounce the requests in ms. Set to 0 to remove debounce. By default 0ms.
+                        />
 
                 </View>
             </Modal>

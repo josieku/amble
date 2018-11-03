@@ -4,11 +4,13 @@ import { MapView, Constants, Location, Permissions } from 'expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import MapViewDirections from '../../services/MapViewDirections';
 import AutocompleteModal from '../Modal/AutocompleteModal';
+import ExperienceModal from '../Modal/Experience';
+import * as calculations from '../../Calculations';
 import Spinner from 'react-native-loading-spinner-overlay';
 
 const { width, height } = Dimensions.get('window');
 
-const GOOGLE_MAPS_APIKEY = 'SUA_API_KEY_AQUI';
+const GOOGLE_MAPS_APIKEY = 'AIzaSyC6e1fU6y6ECP-j_N9KjWEzeq2qFyL1Dy0';
 
 const pin1 = require('../../../assets/imgs/pin1.png');
 const pin2 = require('../../../assets/imgs/pin2.png');
@@ -26,20 +28,26 @@ class Mapa extends Component {
       loading: false,
       origin: {},
       destination: {},
-      coordinates: [
-
-      ],
-      destinationText: 'Informar seu destino',
-      originText: 'Informar sua origem',
+      coordinates: [],
+      waypoints: [],
+      experience: "Experience",
+      destinationText: 'Destination',
+      originText: 'Origin',
       modalOriginVisible: false,
       modalDestinationVisible: false,
+      modalExperienceVisible: false,
       duration: '0 min',
       distance: 0,
       currentLocation: {},
+      finalRoute: false,
       errorMessage: null
     };
 
     this.mapView = null;
+  }
+
+  saveExperience = (experience) => {
+    this.setState({ experience, modalExperienceVisible: false})
   }
 
   saveOrigin = (originParam, originText) => {
@@ -71,6 +79,10 @@ class Mapa extends Component {
 
   setModalOriginVisible = (visible) => {
     this.setState({ modalOriginVisible: visible });
+  }
+
+  setModalExperienceVisible = (visible) => {
+    this.setState({ modalExperienceVisible: visible });
   }
 
   openEstimateDuration = () => {
@@ -106,12 +118,12 @@ class Mapa extends Component {
   getLocationAsync = async () => {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status !== 'granted') {
-      Alert.alert('Para que o Aplicativo funcione, precisamos da sua permissão para recupermos sua localização!');
+      Alert.alert('Please enable location services!');
     } else {
       let data = await Location.getCurrentPositionAsync({});
       const currentLocation = {
-        latitude: data.coords.latitude,
-        longitude: data.coords.longitude,
+        latitude: 42.349166,
+        longitude: -71.084134,
         latitudeDelta: LATITUDE_DELTA,
         longitudeDelta: LONGITUDE_DELTA
       };
@@ -119,20 +131,46 @@ class Mapa extends Component {
     }
   };
 
+  renderRoute = () => {
+    console.log('rendering');
+
+    if (this.state.experience === "Most Scenic") this.scenicRoute();
+
+    // if (this.experience === "Quietest"){
+
+    // }
+
+    // if (this.experience === "Safest"){
+
+    // }
+
+    // if (this.experience === "Best Workout"){
+
+    // }
+
+    // this.setState({ finalRoute: true })
+  }
+
+  scenicRoute = async () => {
+    let waypoints = await calculations.scenic(this.state.coordinates);
+    this.setState({ waypoints, finalRoute: true });
+    // const coordinates = this.state.coordinates;
+    // let params = {
+    //   origin: `${coordinates[0].latitude},${coordinates[0].longitude}`,
+    //   destination: `${coordinates[1].latitude},${coordinates[1].longitude}`,
+    //   key: GOOGLE_MAPS_APIKEY,
+    //   mode: 'walking',
+
+    // }
+  }
+
   render() {
     if (this.state.loading) {
       return (
         <View style={styles.container}>
 
-
-
-
-
-
-
-
           <AutocompleteModal
-            text="Informar sua origem"
+            text="Origin"
             modalVisible={this.state.modalOriginVisible}
             setModalVisible={this.setModalOriginVisible}
             save={this.saveOrigin}
@@ -141,15 +179,20 @@ class Mapa extends Component {
             currentLocation={this.state.currentLocation}
           />
 
-
           <AutocompleteModal
-            text="Informar seu destino"
+            text="Destination"
             modalVisible={this.state.modalDestinationVisible}
             setModalVisible={this.setModalDestinationVisible}
             save={this.goTo}
             googleKey={GOOGLE_MAPS_APIKEY}
             showCurrentLocationButton={false}
             currentLocation={this.state.currentLocation}
+          />
+
+          <ExperienceModal
+            modalVisible={this.state.modalExperienceVisible}
+            setModalVisible={this.setModalExperienceVisible}
+            save={this.saveExperience}
           />
 
           <MapView
@@ -171,17 +214,20 @@ class Mapa extends Component {
                 )
               }
             })}
-            {(this.state.coordinates.length >= 2) && (
+
+            {(this.state.coordinates.length >=2 && this.state.experience!=="Experience" && !this.state.finalRoute) ? this.renderRoute() : null}
+
+            {(this.state.finalRoute) && (
               <MapViewDirections
                 origin={this.state.coordinates[0]}
-                waypoints={(this.state.coordinates.length > 2) ? this.state.coordinates.slice(1, -1) : null}
+                waypoints={this.state.waypoints}
                 destination={this.state.coordinates[this.state.coordinates.length - 1]}
                 apikey={GOOGLE_MAPS_APIKEY}
-                mode='driving'
+                mode='walking'
                 strokeWidth={3}
                 strokeColor="#007584"
                 onStart={(params) => {
-                  console.log(`Started routing between "${params.origin}" and "${params.destination}"`);
+                  console.log(`Started routing between "${params.origin}" and "${params.destination} for ${this.state.experience}"`);
                 }}
                 onReady={(result) => {
                   this.mapView.fitToCoordinates(result.coordinates, {
@@ -208,7 +254,7 @@ class Mapa extends Component {
           </MapView>
 
           <View style={styles.header}>
-            <Text style={styles.textLogo}>JFalbo</Text>
+            <Text style={styles.textLogo}>Walk!</Text>
           </View>
 
           <View style={styles.buttonContainer}>
@@ -221,6 +267,12 @@ class Mapa extends Component {
             <TouchableOpacity onPress={() => this.setModalDestinationVisible(true)} style={[styles.bubbleBottom, styles.button]}>
               <MaterialCommunityIcons name="checkbox-blank" size={20} color="#ffc854" />
               <Text style={styles.textButtonSearchAdress}>{this.state.destinationText}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity onPress={() => this.setModalExperienceVisible(true)} style={[styles.bubbleBottom, styles.button]}>
+              <MaterialCommunityIcons name="checkbox-blank" size={20} color="#ffc854" />
+              <Text style={styles.textButtonSearchAdress}>{this.state.experience}</Text>
             </TouchableOpacity>
           </View>
 
