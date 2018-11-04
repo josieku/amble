@@ -88,21 +88,18 @@ export default class AutocompleteModal extends React.Component {
 const styles = StyleSheet.create({
     modal: {
         // flex: 1,
-        height: 400,
+        height: 750,
         backgroundColor: 'white',
         marginLeft: 10,
         marginRight: 10,
         marginTop: 40,
         marginBottom: -40,
-        borderRadius: 3,
+        borderRadius: 5,
         opacity: 1
     },
     container:{
-        // flex: 1,
-        // backgroundColor: 'gray',
-        // opacity: 0.5,
         flex: 1,
-        backgroundColor: 'rgba(220,220,220,.6)'
+        backgroundColor: 'rgba(0,0,0,.6)'
     },
     textCloseModal: {
         color: 'red'

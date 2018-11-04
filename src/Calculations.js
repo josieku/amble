@@ -28,7 +28,8 @@ export async function scenic(coordinates){
     // for each step, perform a search for nearby points of interests
     for (let i=0; i<directions.length-1; i++){
         let point = directions[i].end_location;
-        let newDest = await searchNearby(`${point.lat},${point.lng}`, places);
+        let bounds = directionData.routes[0].bounds;
+        let newDest = await searchNearby(`${point.lat},${point.lng}`, places, bounds);
         console.log('new dest', newDest.name)
         if (Object.keys(newDest).length > 0){
             let latlng = {latitude: newDest.geometry.location.lat, longitude: newDest.geometry.location.lng};
@@ -49,11 +50,11 @@ export async function scenic(coordinates){
  * 
  * @param {string} location 
  */
-async function searchNearby(location, places){
+async function searchNearby(location, places, bounds){
     let params = {
         location: location,
         key: MAPS_KEY,
-        radius: 300,
+        radius: 500,
     }
 
     // uses objToQueryString to encode the parameters for the HTTP request
@@ -66,19 +67,33 @@ async function searchNearby(location, places){
     
     // loop through the nearby places for one point of interest
     for (let i=0; i < data.results.length; i++){
+        let coord = data.results[i]
         let types = data.results[i].types;
-        // console.log('reviews', data.results[i].reviews, 'reviews!!!!');
 
         if (types.includes("point_of_interest") && !types.includes("lodging") && !types.includes("restaurant")
             && !types.includes("clothing_store") && !types.includes("parking") && !types.includes("pharmacy")
-            && data.results[i].rating > 4.2 && (types.includes("natural_feature") || types.includes("establishment"))
-            && !places[data.results[i].place_id]){
-            point = data.results[i];
+            && coord.rating > 4.2 && (types.includes("natural_feature") || types.includes("establishment"))
+            && !places[coord.place_id] && inBounds(coord.geometry.location, bounds)
+            ){
+            point = coord;
             break;
         }
     }
 
     return point;    
+}
+
+/**
+ * point is given as a location object with lat and lng
+ * bounds is given as a bounds object with northeast and southeast points
+ * @param {Object} point 
+ * @param {Object} bounds 
+ */
+function inBounds(point, bounds){
+    const NE = bounds.northeast;
+    const SW = bounds.southwest;
+    return point.lat < NE.lat && point.lng < NE.lng 
+        && point.lat > SW.lat && point.lng > SW.lng;
 }
 
 export async function workout(coordinates){
