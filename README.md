@@ -46,3 +46,4 @@ It's important to READ THROUGH an api documentation before committing to it, esp
 
 ## Credits
 React Native Google Maps Boilerplate cloned from juliofabo
+Wellesley Hackathon Fall 2018 Project
