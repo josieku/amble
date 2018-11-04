@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import { Platform, Dimensions, StyleSheet, View, TouchableOpacity, Text, Alert, Modal } from 'react-native';
 import { MapView, Constants, Location, Permissions } from 'expo';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import MapViewDirections from '../../services/MapViewDirections';
 import AutocompleteModal from '../Modal/AutocompleteModal';
 import ExperienceModal from '../Modal/Experience';
+import LoadingModal from '../Modal/Loading';
 import * as calculations from '../../Calculations';
 import Spinner from 'react-native-loading-spinner-overlay';
 
@@ -12,14 +13,14 @@ const { width, height } = Dimensions.get('window');
 
 const GOOGLE_MAPS_APIKEY = 'AIzaSyC6e1fU6y6ECP-j_N9KjWEzeq2qFyL1Dy0';
 
-const pin1 = require('../../../assets/imgs/pin1.png');
-const pin2 = require('../../../assets/imgs/pin2.png');
+const pin1 = require('../../../assets/imgs/green_arrow.png');
+const pin2 = require('../../../assets/imgs/green_pin.png');
 
 const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
-class Mapa extends Component {
+class Map extends Component {
 
   constructor(props) {
     super(props);
@@ -46,6 +47,10 @@ class Mapa extends Component {
     };
 
     this.mapView = null;
+  }
+
+  componentWillMount = () => {
+    this.getLocationAsync();
   }
 
   reset = () => {
@@ -118,33 +123,12 @@ class Mapa extends Component {
     this.setState({ modalExperienceVisible: visible });
   }
 
-  openEstimateDuration = () => {
-    if (this.state.duration !== '0 min') {
-      return (
-        <View style={styles.boxContainer}>
-          <View style={[styles.boxBubbleBottom, styles.box]}>
-            <Text style={styles.textButtonLarge}>Estimated Time</Text>
-            <Text style={styles.textButtonLargeValue}>{this.state.duration}</Text>
-          </View>
-        </View>
-      );
-    }
-  }
-
   showCurrentLocationMarker = () => {
     if (this.state.duration === '0 min') {
       return (
         <MapView.Marker coordinate={this.state.currentLocation}
           image={pin1} />
       );
-    }
-  }
-
-  componentWillMount = () => {
-    if (Platform.OS === 'android' && !Constants.isDevice) {
-      Alert.alert('Opa, não é possível recuperar o GPS do Emulador Android, tente em um aparelho!');
-    } else {
-      this.getLocationAsync();
     }
   }
 
@@ -165,15 +149,11 @@ class Mapa extends Component {
   };
 
   renderRoute = () => {
-    console.log('rendering');
+    if (this.state.experience === "Fastest") this.fastestRoute();
 
-    if (this.state.experience === "Fastest"){
-      this.fastestRoute();
-    }
+    if (this.state.experience === "Most Scenic") this.scenicRoute();
 
-    if (this.state.experience === "Most Scenic") {
-      this.scenicRoute();
-    };
+    /** to be implemented **/
 
     // if (this.experience === "Quietest"){
 
@@ -182,15 +162,14 @@ class Mapa extends Component {
     // if (this.experience === "Safest"){
 
     // }
+    /** **/
 
-    if (this.state.experience === "Best Workout"){
-      console.log('workout here');
-      this.bestWorkout();
-    }
+    if (this.state.experience === "Best Workout") this.bestWorkout();
   }
 
   fastestRoute = () => {
     this.setState({ waypoints: [], finalRoute: true, loadingRoute: false })
+    console.log('fast route', this.state.loadingRoute)
   }
 
   scenicRoute = async () => {
@@ -201,6 +180,28 @@ class Mapa extends Component {
   bestWorkout = async () => {
     let waypoints = await calculations.workout(this.state.coordinates);
     this.setState({ waypoints: waypoints.slice(0, 22), finalRoute: true, loadingRoute: false})
+  }
+
+  onClickOrigin = () => {
+    this.setModalOriginVisible(true);
+    this.setState({ finalRoute: false })
+  }
+
+  onClickDestination = () => {
+    this.setModalDestinationVisible(true);
+    this.setState({ finalRoute: false })
+  }
+
+  onClickExperience = () => {
+    this.setModalExperienceVisible(true);
+    this.setState({ finalRoute: false })
+  }
+  
+  search = () => {
+    this.renderRoute();
+    this.setState({
+      loadingRoute: true
+    })
   }
 
   render() {
@@ -234,12 +235,16 @@ class Mapa extends Component {
             save={this.saveExperience}
           />
 
+          <LoadingModal
+            modalVisible={this.state.loadingRoute}
+          />
+
           <MapView
             initialRegion={this.state.currentLocation}
-            region={this.state.currentLocation}
+            // region={this.state.currentLocation}
             style={styles.map}
             ref={c => this.mapView = c}
-          // onPress={this.onMapPress}
+            // onRegionChange={(currentLocation) => this.setState({currentLocation})}
           >
             {this.showCurrentLocationMarker()}
 
@@ -254,8 +259,6 @@ class Mapa extends Component {
                 )
               }
             })}
-
-            {(this.state.coordinates.length >=2 && this.state.experience!=="Experience" && !this.state.finalRoute) ? this.renderRoute() : null}
 
             {(this.state.finalRoute) && (
               <MapViewDirections
@@ -294,50 +297,59 @@ class Mapa extends Component {
 
           </MapView>
 
-          <View style={styles.header}>
-            <Text style={styles.textLogo}>Walk!</Text>
-            <TouchableOpacity onPress={()=>this.reset()}>
-              <Text>Reset</Text>
-            </TouchableOpacity>
+          {/* <View style={styles.header}>
+            <View style={[styles.buttonContainer]}>
+              <Text style={styles.textLogo}>amble</Text>
+              <TouchableOpacity onPress={()=>this.reset()}>
+                <Text>Reset</Text>
+              </TouchableOpacity>
+            </View>
+          </View> */}
+
+          <View style={styles.searchContainer}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity onPress={this.onClickOrigin} style={[styles.bubble, styles.button]}>
+                {/* <MaterialCommunityIcons name="checkbox-blank" size={20} color="#848f4b" /> */}
+                <Text style={styles.textButtonSearchAdress}>{this.state.originText}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity onPress={this.onClickDestination} style={[styles.bubble, styles.button]}>
+                {/* <MaterialCommunityIcons name="checkbox-blank" size={20} color="#848f4b" /> */}
+                <Text style={styles.textButtonSearchAdress}>{this.state.destinationText}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.buttonContainer]}>
+              <TouchableOpacity onPress={this.onClickExperience} style={[styles.bubble, styles.experienceButton]}>
+                {/* <MaterialCommunityIcons name="checkbox-blank" size={20} color="#848f4b" /> */}
+                <Text style={styles.textButtonSearchAdress}>{
+                  this.state.experience==="Experience" 
+                    ? "Choose your walking experience!"
+                    : this.state.experience}
+                  </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.searchButton} onPress={this.search}>
+                <View style={styles.searchLogo}>
+                  <FontAwesome name="search" size={20} color="black" />
+                </View>
+              </TouchableOpacity>
+            </View>
+            {/* <View style={styles.buttonContainer}>
+              {this.state.duration === "0 min" 
+                ? <View style={[styles.boxBubble, styles.box, {justifyContent: 'center'}]}>
+                    <Text style={styles.textButtonSmallValue}>Choose a route to begin!</Text>
+                  </View>
+                : <View style={[styles.boxBubble, styles.box]}>
+                    <Text style={styles.textButtonSmallValue}>Estimate Time</Text>
+                    <Text style={styles.textButtonLargeValue}>{this.state.duration}</Text>
+                  </View>
+              }
+            </View> */}
           </View>
 
-          {(!this.state.finalRoute) && (
-            <View style={styles.searchContainer}>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={() => this.setModalOriginVisible(true)} style={[styles.bubbleTop, styles.button]}>
-                  <MaterialCommunityIcons name="checkbox-blank" size={20} color="#848f4b" />
-                  <Text style={styles.textButtonSearchAdress}>{this.state.originText}</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={() => this.setModalDestinationVisible(true)} style={[styles.bubbleBottom, styles.button]}>
-                  <MaterialCommunityIcons name="checkbox-blank" size={20} color="#848f4b" />
-                  <Text style={styles.textButtonSearchAdress}>{this.state.destinationText}</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={() => this.setModalExperienceVisible(true)} style={[styles.bubbleBottom, styles.button]}>
-                  <MaterialCommunityIcons name="checkbox-blank" size={20} color="#848f4b" />
-                  <Text style={styles.textButtonSearchAdress}>{this.state.experience}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {(this.state.finalRoute) && (
-              <View style={styles.buttonContainer}>
-                <View  style={[styles.bubbleTop, styles.button]}>
-                  <Text style={styles.textButtonSearchAdress}>
-                    {this.state.originText.split(",")[0]} to {this.state.destinationText.split(",")[0]}
-                  </Text>
-                  <MaterialCommunityIcons name="chevron-double-right" size={20} color="#848f4b" />
-                </View>
-              </View>
-          )}
-
-          {
-            this.openEstimateDuration()
-          }
+          <View style={[styles.logoContainer]}>
+            <Text style={styles.textLogo}>amble</Text>
+          </View>
 
         </View>
       );
@@ -354,33 +366,31 @@ class Mapa extends Component {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 20
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  bubbleTop: {
+  bubble: {
     flex: 1,
-    backgroundColor: '#e3e4e8',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderBottomColor: '#a0acb2',
+    backgroundColor: 'white',
+    padding: 8,
+    borderBottomColor: '#e3e4e8',
     borderBottomWidth: 1,
-    borderTopRightRadius: 5,
-    borderTopLeftRadius: 5
-  },
-  bubbleBottom: {
-    flex: 1,
-    backgroundColor: '#e3e4e8',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderBottomColor: '#a0acb2',
-    borderBottomWidth: 1,
+    borderRadius: 3
   },
   button: {
     width: 80,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginHorizontal: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  experienceButton:{
+    flex:7,
     paddingHorizontal: 12,
     alignItems: 'center',
     marginHorizontal: 10,
@@ -396,19 +406,28 @@ const styles = StyleSheet.create({
   textButtonLargeValue: {
     flex: 1,
     margin: 10,
-    fontSize: 20,
-    color: '#848f4b',
-    fontWeight: "bold"
+    fontSize: 15,
+    color: '#a0acb2',
+    // fontWeight: "bold"
   },
+  textButtonSmallValue:{
+    flex: 1,
+    margin: 5,
+    alignItems: 'center',
+    fontSize: 10,
+    color: "white",
+    fontWeight: "bold"
+  },  
   textButtonSearchAdress: {
     flex: 1,
     margin: 2,
     fontSize: 14,
-    color: '#848f4b',
-    fontWeight: "bold"
+    color: '#a0acb2',
+    // fontWeight: "bold"
   },
   buttonContainer: {
     height: 45,
+    width: 355,
     flexDirection: 'row',
     backgroundColor: 'transparent'
   },
@@ -417,13 +436,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: 'transparent',
   },
-  boxBubbleBottom: {
+  boxBubble: {
     flex: 1,
     backgroundColor: '#a0acb2',
     paddingHorizontal: 18,
     paddingVertical: 5,
-    borderBottomRightRadius: 5,
-    borderBottomLeftRadius: 5,
+    borderRadius: 5
+  },
+  logoContainer:{
+    flex:1,
+    width: 350,
+    padding: 10,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end'
   },
   box: {
     paddingHorizontal: 12,
@@ -434,12 +459,24 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    flex: 1,
     marginTop: 50,
   },
   searchContainer:{
     justifyContent: 'flex-end',
-    width: 300
+    width: 350,
+    marginTop: 20
+  },
+  searchLogo:{
+    backgroundColor: 'white',
+    borderRadius: 3,
+    marginLeft:-10,
+    padding: 12
+  },
+  searchButton:{
+    alignItems:'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 10
   },
   textLogo: {
     fontWeight: 'bold',
@@ -447,4 +484,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default Mapa;
+export default Map;
