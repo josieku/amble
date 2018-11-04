@@ -10,7 +10,7 @@ amble helps users find the best pedestrian path from their chosen point of origi
 amble was built on React Native and Expo, with a thorough integration of the Google Maps Platform.  
 
 ## How to run it
-amble is temporarily run on the Expo testing environment.
+amble is currently run in Expo.
 
 1) Clone this repository
 ``` git clone https://github.com/josieku/amble.git```
