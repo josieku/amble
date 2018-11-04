@@ -1,7 +1,7 @@
 # amble - choose your path
 
 ## Inspiration
-Sometimes we just want to go on a walk.  But Google Maps really only gives us the most efficient, fastest way to get to a specific destination.  Maybe I want to be able to take a quiet route to get thoughts out of my mind without needing to do much planning.  Maybe I want to be able to be a little tourist in my area in a very casual, self-guided way.  And here is where amble comes in.
+Sometimes we just want to go on a walk.  But Google Maps really only gives us the most efficient, fastest way to get to a specific destination.  Sometimes I want to be able to take a quiet route to get thoughts out of my mind without needing to do much planning.  Sometimes I want to be able to be a little tourist in my area in a very casual, self-guided way.  This is where amble comes in.
 
 ## What it does
 amble helps users find the best pedestrian path from their chosen point of origin to their destination based on their desired experience on the walk.  Users enter data on origin and destination, and then have five options on shaping their experience -- whether they want the path to be fast, scenic, safe, quiet, or be the most physically demanding (best workout!).
@@ -13,11 +13,18 @@ amble was built on React Native and Expo, with a thorough integration of the Goo
 amble is temporarily run on the Expo testing environment.
 
 1) Clone this repository
-``` git clone  ```
+``` git clone https://github.com/josieku/amble.git```
 
 2) Install Expo-CLI
 ```npm i -g expo-cli```
 
+3) Install all node modules
+```npm install ```
+
+4) Run app on Expo
+``` expo start ```
+
+5) Scan the QR code on your terminal, open up the app in the IOS version of Expo, and enjoy!
 
 ## Challenges I ran into
 We ran into many async/await issues that we had to think through, and many challenges on how to use and manipulate the google places data for specific paths.  We also had to restart the project because we initially utilized here.api, and their map api could not cater to our needs.
